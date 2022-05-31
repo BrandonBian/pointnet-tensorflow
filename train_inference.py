@@ -7,8 +7,8 @@ tf.random.set_seed(1234)
 """
 
 DATA_DIR = "data/FusionOFF"  # directory of dataset
-NUM_CLASSES = 2  # number of classes to predict
-NUM_EPOCHS = 3  # number of epochs
+NUM_CLASSES = 8  # number of classes to predict
+NUM_EPOCHS = 5  # number of epochs
 
 NUM_POINTS = 2048  # number of points to sample for each object
 BATCH_SIZE = 64  # batch size
@@ -43,13 +43,13 @@ def create_model():
     return model
 
 
-def train(save_path):
+def train(save_path, load_path=None):
     """
     Set the number of points to sample and batch size and parse the dataset. This can take
     ~5minutes to complete.
     """
 
-    print("Running Training")
+    print(f"[Running Training: {NUM_EPOCHS} Epochs]")
 
     train_points, test_points, train_labels, test_labels, CLASS_MAP = parse_dataset(
         DATA_DIR, NUM_POINTS
@@ -76,6 +76,10 @@ def train(save_path):
         metrics=["sparse_categorical_accuracy"],
     )
 
+    if load_path:
+        print("Loading weights from:", load_path)
+        model.load_weights(load_path)
+
     model.fit(train_dataset, epochs=NUM_EPOCHS, validation_data=test_dataset)
 
     model.save_weights(save_path)
@@ -87,9 +91,12 @@ def inference(load_path):
 
     We can use matplotlib to visualize our trained model performance.
     """
-    print("Running Inference")
+    print("[Running Inference]")
+    if os.path.exists("inference_results"):
+        shutil.rmtree("inference_results")
+    os.mkdir("inference_results")
 
-    train_points, test_points, train_labels, test_labels, CLASS_MAP = parse_dataset(
+    _, test_points, _, test_labels, CLASS_MAP = parse_dataset(
         DATA_DIR, NUM_POINTS
     )
 
@@ -104,11 +111,14 @@ def inference(load_path):
     )
     model.load_weights(load_path)
 
-    data = test_dataset.take(1)
+    # data = test_dataset.take(1)
+    data = test_dataset
+    points, labels = list(data)[0]  # choose the first batch
 
-    points, labels = list(data)[0]
-    points = points[:8, ...]
-    labels = labels[:8, ...]
+    print(f"[Inference on 1 batch of test data: {len(points)} objects]")
+
+    points = points[:, ...]
+    labels = labels[:, ...]
 
     # run test data through model
     preds = model.predict(points)
@@ -116,21 +126,43 @@ def inference(load_path):
 
     points = points.numpy()
 
+    total = len(points)
+    correct = 0
+
+    correct_cnt = 0
+    faulty_cnt = 0
+
     # plot points with predicted class and label
-    fig = plt.figure(figsize=(20, 30))
-    for i in range(8):
-        ax = fig.add_subplot(2, 4, i + 1, projection="3d")
+
+    for i in range(len(points)):
+
+        # create plots
+        fig = plt.figure()
+        ax = fig.add_subplot(projection="3d")
         ax.scatter(points[i, :, 0], points[i, :, 1], points[i, :, 2])
         ax.set_title(
-            "pred: {:}, label: {:}".format(
-                CLASS_MAP[preds[i].numpy()], CLASS_MAP[labels.numpy()[i]]
+            "[GROUND TRUTH]: {:} | [PRED]: {:}".format(
+                CLASS_MAP[labels.numpy()[i]], CLASS_MAP[preds[i].numpy()]
             )
         )
         ax.set_axis_off()
 
-    plt.show()
+        if CLASS_MAP[labels.numpy()[i]] == CLASS_MAP[preds[i].numpy()]:
+            correct += 1
+            correct_cnt += 1
+            save_name = f"correct_{correct_cnt}.png"
+        else:
+            faulty_cnt += 1
+            save_name = f"faulty_{faulty_cnt}.png"
+
+        plt.savefig(f"inference_results\\{save_name}")
+
+    print(f"[Number of correct predictions]: {correct} / {total}; (Acc: {correct * 100 / total}%)")
 
 
 if __name__ == "__main__":
-    train("checkpoints/FusionOFF/model_weights")
-    inference("checkpoints/FusionOFF/model_weights")
+
+    train(save_path="checkpoints/FusionOFF_20/model_weights",
+          load_path="checkpoints/FusionOFF_15/model_weights")
+
+    # inference("checkpoints/FusionOFF_5/model_weights")
