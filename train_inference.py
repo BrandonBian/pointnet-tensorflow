@@ -85,22 +85,35 @@ def train(save_path, load_path=None):
     model.save_weights(save_path)
 
 
-def draw_confusion(predicted, truths, labels):
-    confusion = confusion_matrix(y_true=truths, y_pred=predicted)
+def draw_confusion(truths, predicted, labels):
+    confusion = confusion_matrix(y_true=truths, y_pred=predicted, normalize='true')
 
-    print(confusion)
+    os.mkdir("inference_results\\stats")
 
-    plt.figure(figsize=(24, 18))
+    with open("inference_results\\stats\\truths.txt", 'w') as f:
+        f.write(str(truths))
+
+    with open("inference_results\\stats\\predicted.txt", 'w') as f:
+        f.write(str(predicted))
+
+    with open("inference_results\\stats\\class_labels.txt", 'w') as f:
+        f.write(str(labels))
+
+    with open("inference_results\\stats\\confusion_matrix.txt", 'w') as f:
+        f.write(str(confusion))
+
+    with open("inference_results\\stats\\classification_report.txt", 'w') as f:
+        f.write(str(classification_report(truths, predicted)))
+
+    plt.figure(figsize=(30, 30))
     label = labels
     sn.heatmap(confusion, annot=False, fmt='.2f', cmap='Blues', xticklabels=label, yticklabels=label)
     plt.xticks(size='xx-large', rotation=45)
     plt.yticks(size='xx-large', rotation=45)
     plt.tight_layout()
 
-    plt.show()
-    plt.savefig("inference_results\\confusion_matrix.pdf", format='pdf')
-
-    print(classification_report(truths, predicted))
+    # plt.show()
+    plt.savefig("inference_results\\stats\\confusion_matrix.png")
 
 
 def inference(load_path):
