@@ -87,7 +87,7 @@ def train(save_path, load_path=None):
     model.save_weights(save_path)
 
 
-def draw_confusion(truths, predicted, labels):
+def draw_confusion(truths, predicted, labels, acc_message):
     confusion = confusion_matrix(y_true=truths, y_pred=predicted, normalize='true')
 
     os.mkdir("inference_results\\stats")
@@ -106,6 +106,9 @@ def draw_confusion(truths, predicted, labels):
 
     with open("inference_results\\stats\\classification_report.txt", 'w') as f:
         f.write(str(classification_report(truths, predicted)))
+
+    with open("inference_results\\stats\\accuracy.txt", 'w') as f:
+        f.write(str(acc_message))
 
     plt.figure(figsize=(30, 30))
     label = labels
@@ -200,7 +203,8 @@ def inference(load_path):
         truths.append(CLASS_MAP[labels.numpy()[i]])
         predicts.append(CLASS_MAP[preds[i].numpy()])
 
-    draw_confusion(truths, predicts, CLASS_MAP.values())
+    msg = f"[Number of correct predictions]: {correct} / {total}; (Acc: {round(correct * 100 / total, 4)}%)"
+    draw_confusion(truths, predicts, CLASS_MAP.values(), msg)
 
 
 if __name__ == "__main__":
