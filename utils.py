@@ -4,12 +4,14 @@ import trimesh
 import numpy as np
 import tensorflow as tf
 import time
+import seaborn as sn
 import shutil
 
 from tqdm import tqdm
 from tensorflow import keras
 from keras import layers
 from matplotlib import pyplot as plt
+from sklearn.metrics import confusion_matrix, classification_report
 
 
 def parse_dataset(DATA_DIR, num_points=2048):
@@ -24,7 +26,7 @@ def parse_dataset(DATA_DIR, num_points=2048):
     train_labels = []
     test_points = []
     test_labels = []
-    class_map = {}
+    class_map = {}  # <key, val> = <folder name, material category id>
     folders = glob.glob(os.path.join(DATA_DIR, "*"))
     final_folders = []
 
@@ -128,8 +130,8 @@ class OrthogonalRegularizer(keras.regularizers.Regularizer):
  We can then define a general function to build T-net layers.
 """
 
-def tnet(inputs, num_features):
 
+def tnet(inputs, num_features):
     # Initalise bias as the indentity matrix
     bias = keras.initializers.Constant(np.eye(num_features).flatten())
     reg = OrthogonalRegularizer(num_features)
@@ -149,5 +151,3 @@ def tnet(inputs, num_features):
     feat_T = layers.Reshape((num_features, num_features))(x)
     # Apply affine transformation to input features
     return layers.Dot(axes=(2, 1))([inputs, feat_T])
-
-

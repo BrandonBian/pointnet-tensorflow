@@ -85,6 +85,24 @@ def train(save_path, load_path=None):
     model.save_weights(save_path)
 
 
+def draw_confusion(predicted, truths, labels):
+    confusion = confusion_matrix(y_true=truths, y_pred=predicted)
+
+    print(confusion)
+
+    plt.figure(figsize=(24, 18))
+    label = labels
+    sn.heatmap(confusion, annot=False, fmt='.2f', cmap='Blues', xticklabels=label, yticklabels=label)
+    plt.xticks(size='xx-large', rotation=45)
+    plt.yticks(size='xx-large', rotation=45)
+    plt.tight_layout()
+
+    plt.show()
+    plt.savefig("inference_results\\confusion_matrix.pdf", format='pdf')
+
+    print(classification_report(truths, predicted))
+
+
 def inference(load_path):
     """
     ## Visualize predictions
@@ -101,7 +119,7 @@ def inference(load_path):
     )
 
     test_dataset = tf.data.Dataset.from_tensor_slices((test_points, test_labels))
-    test_dataset = test_dataset.shuffle(len(test_points)).batch(BATCH_SIZE)
+    test_dataset = test_dataset.shuffle(len(test_points)).batch(len(test_points))
 
     model = create_model()
     model.compile(
@@ -115,7 +133,7 @@ def inference(load_path):
     data = test_dataset
     points, labels = list(data)[0]  # choose the first batch
 
-    print(f"[Inference on 1 batch of test data: {len(points)} objects]")
+    print(f"[Inference on: {len(points)} objects]")
 
     points = points[:, ...]
     labels = labels[:, ...]
@@ -134,7 +152,7 @@ def inference(load_path):
 
     # plot points with predicted class and label
 
-    for i in range(len(points)):
+    for i in tqdm(range(len(points)), desc="Visualizing Inference Results"):
 
         # create plots
         fig = plt.figure()
@@ -156,13 +174,22 @@ def inference(load_path):
             save_name = f"faulty_{faulty_cnt}.png"
 
         plt.savefig(f"inference_results\\{save_name}")
+        plt.close(fig)
 
     print(f"[Number of correct predictions]: {correct} / {total}; (Acc: {correct * 100 / total}%)")
 
+    # Plot confusion matrix
+
+    truths, predicts = [], []
+    for i in range(len(points)):
+        truths.append(CLASS_MAP[labels.numpy()[i]])
+        predicts.append(CLASS_MAP[preds[i].numpy()])
+
+    draw_confusion(truths, predicts, CLASS_MAP.values())
+
 
 if __name__ == "__main__":
+    # train(save_path="checkpoints/FusionOFF_20/model_weights",
+    #       load_path="checkpoints/FusionOFF_15/model_weights")
 
-    train(save_path="checkpoints/FusionOFF_20/model_weights",
-          load_path="checkpoints/FusionOFF_15/model_weights")
-
-    # inference("checkpoints/FusionOFF_5/model_weights")
+    inference("checkpoints/FusionOFF_15/model_weights")
