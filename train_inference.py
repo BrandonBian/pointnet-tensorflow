@@ -82,6 +82,8 @@ def train(save_path, load_path=None):
 
     model.fit(train_dataset, epochs=NUM_EPOCHS, validation_data=test_dataset)
 
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
     model.save_weights(save_path)
 
 
