@@ -8,7 +8,7 @@ tf.random.set_seed(1234)
 
 DATA_DIR = "data/FusionOFF"  # directory of dataset
 NUM_CLASSES = 8  # number of classes to predict
-NUM_EPOCHS = 5  # number of epochs
+NUM_EPOCHS = 1  # number of epochs
 
 NUM_POINTS = 2048  # number of points to sample for each object
 BATCH_SIZE = 64  # batch size
@@ -48,6 +48,11 @@ def train(save_path, load_path=None):
     Set the number of points to sample and batch size and parse the dataset. This can take
     ~5minutes to complete.
     """
+
+    if tf.test.gpu_device_name():
+        print('[Runing on GPU Device: {}]'.format(tf.test.gpu_device_name()))
+    else:
+        print("[WARNING: You are training on CPU, not GPU!]")
 
     print(f"[Running Training: {NUM_EPOCHS} Epochs]")
 
@@ -208,7 +213,7 @@ def inference(load_path):
 
 
 if __name__ == "__main__":
-    # train(save_path="checkpoints/FusionOFF_20/model_weights",
-    #       load_path="checkpoints/FusionOFF_15/model_weights")
+    train(save_path="checkpoints/FusionOFF_test/model_weights",
+          load_path=None)
 
-    inference("checkpoints/FusionOFF_15/model_weights")
+    # inference("checkpoints/FusionOFF_15/model_weights")

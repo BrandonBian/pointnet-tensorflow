@@ -1,0 +1,10 @@
+name: tf_gpu
+channels:
+  - defaults
+dependencies:
+  - tensorflow-gpu
+  - trimesh
+  - seaborn
+  - tqdm
+  - keras
+  - scikit-learn
